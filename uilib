@@ -1917,6 +1917,8 @@ do
                 if Addon.Type == 'KeyPicker' and Addon.SyncToggleState then
                     Addon.Toggled = Bool
                     Addon:Update()
+                elseif Addon.Type == 'KeyPicker' and not Bool and Addon.Toggled then
+                    Addon.Toggled = false
                 end
             end
 
