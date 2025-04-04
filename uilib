@@ -70,7 +70,7 @@ local function GetPlayersString()
     local PlayerList = Players:GetPlayers();
 
     for i = 1, #PlayerList do
-        if PlayerList[i].Name ~= Player.Name then
+        if PlayerList[i].Name ~= LocalPlayer.Name then
             PlayerList[i] = PlayerList[i].Name;
         end
     end;
