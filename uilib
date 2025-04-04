@@ -67,17 +67,17 @@ table.insert(Library.Signals, RenderStepped:Connect(function(Delta)
 end))
 
 local function GetPlayersString()
-    local PlayerList = Players:GetPlayers();
-
-    for i = 1, #PlayerList do
-        if PlayerList[i].Name ~= LocalPlayer.Name then
-            PlayerList[i] = PlayerList[i].Name;
+    local PlayerList = {}
+    
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            table.insert(PlayerList, player.Name)
         end
-    end;
+    end
 
-    table.sort(PlayerList, function(str1, str2) return str1 < str2 end);
+    table.sort(PlayerList, function(str1, str2) return str1 < str2 end)
 
-    return PlayerList;
+    return PlayerList
 end;
 
 local function GetTeamsString()
