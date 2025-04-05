@@ -1183,15 +1183,15 @@ do
                 if KeyPicker.Value == 'None' then
                     return false;
                 end
-
-                local Key = KeyPicker.Value;
-
-                if Key == 'MB1' or Key == 'MB2' then
-                    return Key == 'MB1' and InputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1)
-                        or Key == 'MB2' and InputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2);
-                else
-                    return InputService:IsKeyDown(Enum.KeyCode[KeyPicker.Value]);
-                end;
+                if ParentObj.Value then
+                    local Key = KeyPicker.Value;
+                    if Key == 'MB1' or Key == 'MB2' then
+                        return Key == 'MB1' and InputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1)
+                            or Key == 'MB2' and InputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2);
+                    else
+                        return InputService:IsKeyDown(Enum.KeyCode[KeyPicker.Value]);
+                    end;
+                end
             else
                 return KeyPicker.Toggled;
             end;
