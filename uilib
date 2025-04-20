@@ -2511,21 +2511,23 @@ do
         function Dropdown:SetValue(Val)
             if Dropdown.Multi then
                 local nTable = {};
-
-                for Value, Bool in next, Val do
-                    if table.find(Dropdown.Values, Value) then
-                        nTable[Value] = true
+                if not Val then
+                    for Value, Bool in next, Dropdown.Values do
+                        nTable[Value] = false
                     end;
-                end;
-
-                Dropdown.Value = nTable;
+                    Dropdown.Value = nTable;
+                else
+                    for Value, Bool in next, Val do
+                        if table.find(Dropdown.Values, Value) then
+                            nTable[Value] = true
+                        end;
+                    end;
+                    Dropdown.Value = nTable;
+                end
             else
-                print('lol')
                 if (not Val) then
-                    print('lol2')
                     Dropdown.Value = nil;
                 elseif table.find(Dropdown.Values, Val) then
-                    print('lol3')
                     Dropdown.Value = Val;
                 end;
             end;
