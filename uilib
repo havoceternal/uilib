@@ -2511,7 +2511,7 @@ do
         function Dropdown:SetValue(Val)
             if Dropdown.Multi then
                 local nTable = {};
-                if not Val then
+                if (not Val) or Val == nil then
                     print('not val')
                     for Value, Bool in next, Dropdown.Values do
                         nTable[Value] = false
