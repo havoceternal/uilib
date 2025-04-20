@@ -2512,6 +2512,7 @@ do
             if Dropdown.Multi then
                 local nTable = {};
                 if not Val then
+                    print('not val')
                     for Value, Bool in next, Dropdown.Values do
                         nTable[Value] = false
                     end;
