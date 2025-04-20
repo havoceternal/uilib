@@ -2533,9 +2533,22 @@ do
             end;
 
             Dropdown:BuildDropdownList();
-
-            Library:SafeCallback(Dropdown.Callback, Dropdown.Value);
-            Library:SafeCallback(Dropdown.Changed, Dropdown.Value);
+            if Dropdown.Multi then
+                local allFalse = true
+                for Value, Bool in next, nTable do
+                    if Bool == true then
+                        allFalse = false
+                        return
+                    end
+                end;
+                if not allFalse then
+                    Library:SafeCallback(Dropdown.Callback, Dropdown.Value);
+                    Library:SafeCallback(Dropdown.Changed, Dropdown.Value);
+                end
+            else
+                Library:SafeCallback(Dropdown.Callback, Dropdown.Value);
+                Library:SafeCallback(Dropdown.Changed, Dropdown.Value);
+            end
         end;
 
         DropdownOuter.InputBegan:Connect(function(Input)
