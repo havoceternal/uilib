@@ -2520,9 +2520,12 @@ do
 
                 Dropdown.Value = nTable;
             else
+                print('lol')
                 if (not Val) then
+                    print('lol2')
                     Dropdown.Value = nil;
                 elseif table.find(Dropdown.Values, Val) then
+                    print('lol3')
                     Dropdown.Value = Val;
                 end;
             end;
