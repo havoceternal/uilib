@@ -2535,12 +2535,17 @@ do
             Dropdown:BuildDropdownList();
             if Dropdown.Multi then
                 local allFalse = true
-                for Value, Bool in next, nTable do
-                    if Bool == true then
-                        allFalse = false
-                        return
-                    end
-                end;
+                if (not nTable) or nTable == nil then
+                    allFalse = true
+                end
+                if nTable then
+                    for Value, Bool in next, nTable do
+                        if Bool == true then
+                            allFalse = false
+                            return
+                        end
+                    end;
+                end
                 if not allFalse then
                     Library:SafeCallback(Dropdown.Callback, Dropdown.Value);
                     Library:SafeCallback(Dropdown.Changed, Dropdown.Value);
