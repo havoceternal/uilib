@@ -2349,7 +2349,6 @@ do
             end;
 
             ItemList.Text = (Str == '' and '--' or Str);
-            print(Str)
         end;
 
         function Dropdown:GetActiveValues()
