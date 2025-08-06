@@ -2071,6 +2071,7 @@ do
             if Info.Compact then
                 DisplayLabel.Text = Info.Text .. ': ' .. Slider.Value .. Suffix
             elseif Info.HideMax then
+                print("hide max")
                 DisplayLabel.Text = string.format('%s', Slider.Value .. Suffix)
             else
                 DisplayLabel.Text = string.format('%s/%s', Slider.Value .. Suffix, Slider.Max .. Suffix);
