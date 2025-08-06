@@ -1996,7 +1996,7 @@ do
         local SliderOuter = Library:Create('Frame', {
             BackgroundColor3 = Color3.new(0, 0, 0);
             BorderColor3 = Color3.new(0, 0, 0);
-            Size = UDim2.new(Info.Half and 0.5 or 1, -4, 0, 13); -- Half width if needed
+            Size = UDim2.new(Info.Half and 0.5 or 1, Info.Half and 0.5 or -2, 0, 13); -- Half width if needed
             ZIndex = 5;
             Parent = Container;
         });
