@@ -2357,6 +2357,7 @@ do
 
                 for Value, Bool in next, Dropdown.Value do
                     table.insert(T, Value);
+                    print(Value)
                 end;
 
                 return T;
@@ -2483,13 +2484,27 @@ do
             RecalculateListSize(Y);
         end;
 
-        function Dropdown:SetValues(NewValues)
+       function Dropdown:SetValues(NewValues)
             if NewValues then
-                Dropdown.Values = NewValues;
-            end;
-
-            Dropdown:BuildDropdownList();
-        end;
+                Dropdown.Values = NewValues
+            end
+        
+            -- Clean up Dropdown.Value for removed entries
+            if Dropdown.Multi then
+                for key in pairs(Dropdown.Value) do
+                    if not table.find(Dropdown.Values, key) then
+                        Dropdown.Value[key] = nil
+                    end
+                end
+            else
+                if Dropdown.Value and not table.find(Dropdown.Values, Dropdown.Value) then
+                    Dropdown.Value = nil
+                end
+            end
+        
+            Dropdown:BuildDropdownList()
+            Dropdown:Display()
+        end
 
         function Dropdown:OpenDropdown()
             ListOuter.Visible = true;
