@@ -2183,7 +2183,7 @@ do
 
         local RelativeOffset = 0;
 
-        if not Info.Compact then
+       --[[ if not Info.Compact then
             local DropdownLabel = Library:CreateLabel({
                 Size = UDim2.new(1, 0, 0, 10);
                 TextSize = 14;
@@ -2195,7 +2195,7 @@ do
             });
 
             Groupbox:AddBlank(3);
-        end
+        end--]]
 
         for _, Element in next, Container:GetChildren() do
             if not Element:IsA('UIListLayout') then
