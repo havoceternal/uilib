@@ -696,7 +696,7 @@ do
 
             Library:Create('UIPadding', {
                 Name = 'Padding',
-                PaddingLeft = UDim.new(0, 4),
+                PaddingLeft = UDim.new(0, 0), -- 4
                 Parent = ContextMenu.Inner,
             });
 
