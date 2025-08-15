@@ -67,15 +67,17 @@ table.insert(Library.Signals, RenderStepped:Connect(function(Delta)
 end))
 
 local function GetPlayersString()
-    local PlayerList = Players:GetPlayers();
+    local PlayerList = {}
+    
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            table.insert(PlayerList, player.Name)
+        end
+    end
 
-    for i = 1, #PlayerList do
-        PlayerList[i] = PlayerList[i].Name;
-    end;
+    table.sort(PlayerList, function(str1, str2) return str1 < str2 end)
 
-    table.sort(PlayerList, function(str1, str2) return str1 < str2 end);
-
-    return PlayerList;
+    return PlayerList
 end;
 
 local function GetTeamsString()
@@ -688,15 +690,14 @@ do
 
             Library:Create('UIListLayout', {
                 Name = 'Layout',
-                FillDirection = Enum.FillDirection.Horizontal;
-				Wraps = true;
+                FillDirection = Enum.FillDirection.Vertical;
                 SortOrder = Enum.SortOrder.LayoutOrder;
                 Parent = ContextMenu.Inner;
             });
 
             Library:Create('UIPadding', {
                 Name = 'Padding',
-                PaddingLeft = UDim.new(0, 4), -- 4
+                PaddingLeft = UDim.new(0, 4),
                 Parent = ContextMenu.Inner,
             });
 
@@ -1005,7 +1006,7 @@ do
         local ParentObj = self;
         local ToggleLabel = self.TextLabel;
         local Container = self.Container;
-
+        
         assert(Info.Default, 'AddKeyPicker: Missing default value.');
 
         local KeyPicker = {
@@ -1182,15 +1183,15 @@ do
                 if KeyPicker.Value == 'None' then
                     return false;
                 end
-
-                local Key = KeyPicker.Value;
-
-                if Key == 'MB1' or Key == 'MB2' then
-                    return Key == 'MB1' and InputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1)
-                        or Key == 'MB2' and InputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2);
-                else
-                    return InputService:IsKeyDown(Enum.KeyCode[KeyPicker.Value]);
-                end;
+                if ParentObj.Value then
+                    local Key = KeyPicker.Value;
+                    if Key == 'MB1' or Key == 'MB2' then
+                        return Key == 'MB1' and InputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1)
+                            or Key == 'MB2' and InputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2);
+                    else
+                        return InputService:IsKeyDown(Enum.KeyCode[KeyPicker.Value]);
+                    end;
+                end
             else
                 return KeyPicker.Toggled;
             end;
@@ -1282,37 +1283,38 @@ do
             end;
         end);
 
-        Library:GiveSignal(InputService.InputBegan:Connect(function(Input)
-            if (not Picking) then
-                if KeyPicker.Mode == 'Toggle' then
-                    local Key = KeyPicker.Value;
 
-                    if Key == 'MB1' or Key == 'MB2' then
-                        if Key == 'MB1' and Input.UserInputType == Enum.UserInputType.MouseButton1
-                        or Key == 'MB2' and Input.UserInputType == Enum.UserInputType.MouseButton2 then
-                            KeyPicker.Toggled = not KeyPicker.Toggled
-                            KeyPicker:DoClick()
-                        end;
-                    elseif Input.UserInputType == Enum.UserInputType.Keyboard then
-                        if Input.KeyCode.Name == Key then
-                            KeyPicker.Toggled = not KeyPicker.Toggled;
-                            KeyPicker:DoClick()
-                        end;
-                    end;
-                end;
-
-                KeyPicker:Update();
-            end;
-
-            if Input.UserInputType == Enum.UserInputType.MouseButton1 then
-                local AbsPos, AbsSize = ModeSelectOuter.AbsolutePosition, ModeSelectOuter.AbsoluteSize;
-
-                if Mouse.X < AbsPos.X or Mouse.X > AbsPos.X + AbsSize.X
-                    or Mouse.Y < (AbsPos.Y - 20 - 1) or Mouse.Y > AbsPos.Y + AbsSize.Y then
-
-                    ModeSelectOuter.Visible = false;
-                end;
-            end;
+        Library:GiveSignal(InputService.InputBegan:Connect(function(Input, Processed)
+        	if (not Picking) and not Processed then
+        		if KeyPicker.Mode == 'Toggle' and ParentObj.Value and KeyPicker then
+        			local Key = KeyPicker.Value;
+        
+        			if Key == 'MB1' or Key == 'MB2' then
+        				if Key == 'MB1' and Input.UserInputType == Enum.UserInputType.MouseButton1
+        					or Key == 'MB2' and Input.UserInputType == Enum.UserInputType.MouseButton2 then
+        					KeyPicker.Toggled = not KeyPicker.Toggled
+        					KeyPicker:DoClick()
+        				end;
+        			elseif Input.UserInputType == Enum.UserInputType.Keyboard then
+        				if Input.KeyCode.Name == Key then
+        					KeyPicker.Toggled = not KeyPicker.Toggled;
+        					KeyPicker:DoClick()
+        				end;
+        			end;
+        		end;
+        
+        		KeyPicker:Update();
+        	end;
+        
+        	if Input.UserInputType == Enum.UserInputType.MouseButton1 then
+        		local AbsPos, AbsSize = ModeSelectOuter.AbsolutePosition, ModeSelectOuter.AbsoluteSize;
+        
+        		if Mouse.X < AbsPos.X or Mouse.X > AbsPos.X + AbsSize.X
+        			or Mouse.Y < (AbsPos.Y - 20 - 1) or Mouse.Y > AbsPos.Y + AbsSize.Y then
+        
+        			ModeSelectOuter.Visible = false;
+        		end;
+        	end;
         end))
 
         Library:GiveSignal(InputService.InputEnded:Connect(function(Input)
@@ -1590,7 +1592,6 @@ do
 
         return Button;
     end;
-
 
     function Funcs:AddDivider()
         local Groupbox = self;
@@ -1918,6 +1919,8 @@ do
                 if Addon.Type == 'KeyPicker' and Addon.SyncToggleState then
                     Addon.Toggled = Bool
                     Addon:Update()
+                elseif Addon.Type == 'KeyPicker' and not Bool and Addon.Toggled then
+                    Addon.Toggled = false
                 end
             end
 
@@ -1954,204 +1957,203 @@ do
         return Toggle;
     end;
 
-  function Funcs:AddSlider(Idx, Info)
-	assert(Info.Default, 'AddSlider: Missing default value.');
-	assert(Info.Text, 'AddSlider: Missing slider text.');
-	assert(Info.Min, 'AddSlider: Missing minimum value.');
-	assert(Info.Max, 'AddSlider: Missing maximum value.');
-	assert(Info.Rounding, 'AddSlider: Missing rounding value.');
+    function Funcs:AddSlider(Idx, Info)
+        assert(Info.Default, 'AddSlider: Missing default value.');
+        assert(Info.Text, 'AddSlider: Missing slider text.');
+        assert(Info.Min, 'AddSlider: Missing minimum value.');
+        assert(Info.Max, 'AddSlider: Missing maximum value.');
+        assert(Info.Rounding, 'AddSlider: Missing rounding value.');
 
-	local Slider = {
-		Value = Info.Default;
-		Min = Info.Min;
-		Max = Info.Max;
-		Rounding = Info.Rounding;
-		MaxSize = 100;
-		Type = 'Slider';
-		Callback = Info.Callback or function(Value) end;
-	};
+        local Slider = {
+            Value = Info.Default;
+            Min = Info.Min;
+            Max = Info.Max;
+            Rounding = Info.Rounding;
+            MaxSize = 232;
+            Type = 'Slider';
+            Callback = Info.Callback or function(Value) end;
+        };
 
-	local Groupbox = self;
-	local Container = Groupbox.Container;
+        local Groupbox = self;
+        local Container = Groupbox.Container;
 
-	if not Info.Compact then
-		Library:CreateLabel({
-			Size = UDim2.new(1, 0, 0, 10);
-			TextSize = 14;
-			Text = Info.Text;
-			TextXAlignment = Enum.TextXAlignment.Left;
-			TextYAlignment = Enum.TextYAlignment.Bottom;
-			ZIndex = 5;
-			Parent = Container;
-		});
+        if not Info.Compact then
+            Library:CreateLabel({
+                Size = UDim2.new(1, 0, 0, 10);
+                TextSize = 14;
+                Text = Info.Text;
+                TextXAlignment = Enum.TextXAlignment.Left;
+                TextYAlignment = Enum.TextYAlignment.Bottom;
+                ZIndex = 5;
+                Parent = Container;
+            });
 
-		Groupbox:AddBlank(3);
-	end
+            Groupbox:AddBlank(3);
+        end
 
-	local SliderOuter = Library:Create('Frame', {
-		BackgroundColor3 = Color3.new(0, 0, 0);
-		BorderColor3 = Color3.new(0, 0, 0);
-		Size = UDim2.new(0.3, -4, 0, 13);
-		ZIndex = 5;
-		Parent = Container;
-	});
-	print('yep')
-	Library:AddToRegistry(SliderOuter, {
-		BorderColor3 = 'Black';
-	});
+        local SliderOuter = Library:Create('Frame', {
+            BackgroundColor3 = Color3.new(0, 0, 0);
+            BorderColor3 = Color3.new(0, 0, 0);
+            Size = UDim2.new(1, -4, 0, 13);
+            ZIndex = 5;
+            Parent = Container;
+        });
 
-	local SliderInner = Library:Create('Frame', {
-		BackgroundColor3 = Library.MainColor;
-		BorderColor3 = Library.OutlineColor;
-		BorderMode = Enum.BorderMode.Inset;
-		Size = UDim2.new(1, 0, 1, 0);
-		ZIndex = 6;
-		Parent = SliderOuter;
-	});
+        Library:AddToRegistry(SliderOuter, {
+            BorderColor3 = 'Black';
+        });
 
-	Library:AddToRegistry(SliderInner, {
-		BackgroundColor3 = 'MainColor';
-		BorderColor3 = 'OutlineColor';
-	});
+        local SliderInner = Library:Create('Frame', {
+            BackgroundColor3 = Library.MainColor;
+            BorderColor3 = Library.OutlineColor;
+            BorderMode = Enum.BorderMode.Inset;
+            Size = UDim2.new(1, 0, 1, 0);
+            ZIndex = 6;
+            Parent = SliderOuter;
+        });
 
-	local Fill = Library:Create('Frame', {
-		BackgroundColor3 = Library.AccentColor;
-		BorderColor3 = Library.AccentColorDark;
-		Size = UDim2.new(0, 0, 1, 0);
-		ZIndex = 7;
-		Parent = SliderInner;
-	});
+        Library:AddToRegistry(SliderInner, {
+            BackgroundColor3 = 'MainColor';
+            BorderColor3 = 'OutlineColor';
+        });
 
-	Library:AddToRegistry(Fill, {
-		BackgroundColor3 = 'AccentColor';
-		BorderColor3 = 'AccentColorDark';
-	});
+        local Fill = Library:Create('Frame', {
+            BackgroundColor3 = Library.AccentColor;
+            BorderColor3 = Library.AccentColorDark;
+            Size = UDim2.new(0, 0, 1, 0);
+            ZIndex = 7;
+            Parent = SliderInner;
+        });
 
-	local HideBorderRight = Library:Create('Frame', {
-		BackgroundColor3 = Library.AccentColor;
-		BorderSizePixel = 0;
-		Position = UDim2.new(1, 0, 0, 0);
-		Size = UDim2.new(0, 1, 1, 0);
-		ZIndex = 8;
-		Parent = Fill;
-	});
+        Library:AddToRegistry(Fill, {
+            BackgroundColor3 = 'AccentColor';
+            BorderColor3 = 'AccentColorDark';
+        });
 
-	Library:AddToRegistry(HideBorderRight, {
-		BackgroundColor3 = 'AccentColor';
-	});
+        local HideBorderRight = Library:Create('Frame', {
+            BackgroundColor3 = Library.AccentColor;
+            BorderSizePixel = 0;
+            Position = UDim2.new(1, 0, 0, 0);
+            Size = UDim2.new(0, 1, 1, 0);
+            ZIndex = 8;
+            Parent = Fill;
+        });
 
-	local DisplayLabel = Library:CreateLabel({
-		Size = UDim2.new(1, 0, 1, 0);
-		TextSize = 14;
-		Text = 'Infinite';
-		ZIndex = 9;
-		Parent = SliderInner;
-	});
+        Library:AddToRegistry(HideBorderRight, {
+            BackgroundColor3 = 'AccentColor';
+        });
 
-	Library:OnHighlight(SliderOuter, SliderOuter,
-		{ BorderColor3 = 'AccentColor' },
-		{ BorderColor3 = 'Black' }
-	);
+        local DisplayLabel = Library:CreateLabel({
+            Size = UDim2.new(1, 0, 1, 0);
+            TextSize = 14;
+            Text = 'Infinite';
+            ZIndex = 9;
+            Parent = SliderInner;
+        });
 
-	if type(Info.Tooltip) == 'string' then
-		Library:AddToolTip(Info.Tooltip, SliderOuter)
-	end
+        Library:OnHighlight(SliderOuter, SliderOuter,
+            { BorderColor3 = 'AccentColor' },
+            { BorderColor3 = 'Black' }
+        );
 
-	function Slider:UpdateColors()
-		Fill.BackgroundColor3 = Library.AccentColor;
-		Fill.BorderColor3 = Library.AccentColorDark;
-	end;
+        if type(Info.Tooltip) == 'string' then
+            Library:AddToolTip(Info.Tooltip, SliderOuter)
+        end
 
-function Slider:Display()
-    local Suffix = Info.Suffix or ''
-    if Info.Compact then
-        DisplayLabel.Text = Info.Text .. ': ' .. Slider.Value .. Suffix
-    elseif Info.HideMax then
-        DisplayLabel.Text = string.format('%s', Slider.Value .. Suffix)
-    else
-        DisplayLabel.Text = string.format('%s/%s', Slider.Value .. Suffix, Slider.Max .. Suffix)
-    end
+        function Slider:UpdateColors()
+            Fill.BackgroundColor3 = Library.AccentColor;
+            Fill.BorderColor3 = Library.AccentColorDark;
+        end;
 
-    local MaxSize = SliderInner.AbsoluteSize.X
-    local X = math.ceil(Library:MapValue(Slider.Value, Slider.Min, Slider.Max, 0, MaxSize))
-    Fill.Size = UDim2.new(0, X, 1, 0)
+        function Slider:Display()
+            local Suffix = Info.Suffix or '';
 
-    HideBorderRight.Visible = not (X == MaxSize or X == 0)
-end
+            if Info.Compact then
+                DisplayLabel.Text = Info.Text .. ': ' .. Slider.Value .. Suffix
+            elseif Info.HideMax then
+                print("hide max")
+                DisplayLabel.Text = string.format('%s', Slider.Value .. Suffix)
+            else
+                DisplayLabel.Text = string.format('%s/%s', Slider.Value .. Suffix, Slider.Max .. Suffix);
+            end
+
+            local X = math.ceil(Library:MapValue(Slider.Value, Slider.Min, Slider.Max, 0, Slider.MaxSize));
+            Fill.Size = UDim2.new(0, X, 1, 0);
+
+            HideBorderRight.Visible = not (X == Slider.MaxSize or X == 0);
+        end;
+
+        function Slider:OnChanged(Func)
+            Slider.Changed = Func;
+            Func(Slider.Value);
+        end;
+
+        local function Round(Value)
+            if Slider.Rounding == 0 then
+                return math.floor(Value);
+            end;
 
 
+            return tonumber(string.format('%.' .. Slider.Rounding .. 'f', Value))
+        end;
 
-	function Slider:OnChanged(Func)
-		Slider.Changed = Func;
-		Func(Slider.Value);
-	end;
+        function Slider:GetValueFromXOffset(X)
+            return Round(Library:MapValue(X, 0, Slider.MaxSize, Slider.Min, Slider.Max));
+        end;
 
-	local function Round(Value)
-		if Slider.Rounding == 0 then
-			return math.floor(Value);
-		end;
+        function Slider:SetValue(Str)
+            local Num = tonumber(Str);
 
+            if (not Num) then
+                return;
+            end;
 
-		return tonumber(string.format('%.' .. Slider.Rounding .. 'f', Value))
-	end;
+            Num = math.clamp(Num, Slider.Min, Slider.Max);
 
-	function Slider:GetValueFromXOffset(X)
-    local MaxSize = SliderInner.AbsoluteSize.X
-    return Round(Library:MapValue(X, 0, MaxSize, Slider.Min, Slider.Max))
-end
+            Slider.Value = Num;
+            Slider:Display();
 
-	function Slider:SetValue(Str)
-		local Num = tonumber(Str);
+            Library:SafeCallback(Slider.Callback, Slider.Value);
+            Library:SafeCallback(Slider.Changed, Slider.Value);
+        end;
 
-		if (not Num) then
-			return;
-		end;
+        SliderInner.InputBegan:Connect(function(Input)
+            if Input.UserInputType == Enum.UserInputType.MouseButton1 and not Library:MouseIsOverOpenedFrame() then
+                local mPos = Mouse.X;
+                local gPos = Fill.Size.X.Offset;
+                local Diff = mPos - (Fill.AbsolutePosition.X + gPos);
 
-		Num = math.clamp(Num, Slider.Min, Slider.Max);
+                while InputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) do
+                    local nMPos = Mouse.X;
+                    local nX = math.clamp(gPos + (nMPos - mPos) + Diff, 0, Slider.MaxSize);
 
-		Slider.Value = Num;
-		Slider:Display();
+                    local nValue = Slider:GetValueFromXOffset(nX);
+                    local OldValue = Slider.Value;
+                    Slider.Value = nValue;
 
-		Library:SafeCallback(Slider.Callback, Slider.Value);
-		Library:SafeCallback(Slider.Changed, Slider.Value);
-	end;
+                    Slider:Display();
 
-	SliderInner.InputBegan:Connect(function(Input)
-		if Input.UserInputType == Enum.UserInputType.MouseButton1 and not Library:MouseIsOverOpenedFrame() then
-			local mPos = Mouse.X;
-			local gPos = Fill.Size.X.Offset;
-			local Diff = mPos - (Fill.AbsolutePosition.X + gPos);
+                    if nValue ~= OldValue then
+                        Library:SafeCallback(Slider.Callback, Slider.Value);
+                        Library:SafeCallback(Slider.Changed, Slider.Value);
+                    end;
 
-			while InputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) do
-				local nMPos = Mouse.X;
-				local nX = math.clamp(gPos + (nMPos - mPos) + Diff, 0, Slider.MaxSize);
+                    RenderStepped:Wait();
+                end;
 
-				local nValue = Slider:GetValueFromXOffset(nX);
-				local OldValue = Slider.Value;
-				Slider.Value = nValue;
+                Library:AttemptSave();
+            end;
+        end);
 
-				Slider:Display();
+        Slider:Display();
+        Groupbox:AddBlank(Info.BlankSize or 6);
+        Groupbox:Resize();
 
-				if nValue ~= OldValue then
-					Library:SafeCallback(Slider.Callback, Slider.Value);
-					Library:SafeCallback(Slider.Changed, Slider.Value);
-				end;
+        Options[Idx] = Slider;
 
-				RenderStepped:Wait();
-			end;
-
-			Library:AttemptSave();
-		end;
-	end);
-
-	Slider:Display();
-	Groupbox:AddBlank(Info.BlankSize or 6);
-	Groupbox:Resize();
-
-	Options[Idx] = Slider;
-
-	return Slider;
-end;
+        return Slider;
+    end;
+    
     function Funcs:AddDropdown(Idx, Info)
         if Info.SpecialType == 'Player' then
             Info.Values = GetPlayersString();
@@ -2356,6 +2358,7 @@ end;
 
                 for Value, Bool in next, Dropdown.Value do
                     table.insert(T, Value);
+                    print(Value)
                 end;
 
                 return T;
@@ -2482,13 +2485,27 @@ end;
             RecalculateListSize(Y);
         end;
 
-        function Dropdown:SetValues(NewValues)
+       function Dropdown:SetValues(NewValues)
             if NewValues then
-                Dropdown.Values = NewValues;
-            end;
-
-            Dropdown:BuildDropdownList();
-        end;
+                Dropdown.Values = NewValues
+            end
+        
+            -- Clean up Dropdown.Value for removed entries
+            if Dropdown.Multi then
+                for key in pairs(Dropdown.Value) do
+                    if not table.find(Dropdown.Values, key) then
+                        Dropdown.Value[key] = nil
+                    end
+                end
+            else
+                if Dropdown.Value and not table.find(Dropdown.Values, Dropdown.Value) then
+                    Dropdown.Value = nil
+                end
+            end
+        
+            Dropdown:BuildDropdownList()
+            Dropdown:Display()
+        end
 
         function Dropdown:OpenDropdown()
             ListOuter.Visible = true;
@@ -2510,14 +2527,19 @@ end;
         function Dropdown:SetValue(Val)
             if Dropdown.Multi then
                 local nTable = {};
-
-                for Value, Bool in next, Val do
-                    if table.find(Dropdown.Values, Value) then
-                        nTable[Value] = true
+                if (not Val) or Val == nil then
+                    for Value, Bool in next, Dropdown.Values do
+                        nTable[Value] = false
                     end;
-                end;
-
-                Dropdown.Value = nTable;
+                    Dropdown.Value = nTable;
+                else
+                    for Value, Bool in next, Val do
+                        if table.find(Dropdown.Values, Value) then
+                            nTable[Value] = true
+                        end;
+                    end;
+                    Dropdown.Value = nTable;
+                end
             else
                 if (not Val) then
                     Dropdown.Value = nil;
@@ -2526,10 +2548,25 @@ end;
                 end;
             end;
 
-            Dropdown:BuildDropdownList();
-
-            Library:SafeCallback(Dropdown.Callback, Dropdown.Value);
-            Library:SafeCallback(Dropdown.Changed, Dropdown.Value);
+        Dropdown:BuildDropdownList();
+             if Dropdown.Multi then
+                local allFalse = true
+                if typeof(nTable) == "table" then
+                    for Value, Bool in next, nTable do
+                        if Bool == true then
+                            allFalse = false
+                            return
+                        end
+                    end
+                end
+                if not allFalse then
+                    Library:SafeCallback(Dropdown.Callback, Dropdown.Value)
+                    Library:SafeCallback(Dropdown.Changed, Dropdown.Value)
+                end
+            else
+                Library:SafeCallback(Dropdown.Callback, Dropdown.Value)
+                Library:SafeCallback(Dropdown.Changed, Dropdown.Value)
+            end
         end;
 
         DropdownOuter.InputBegan:Connect(function(Input)
@@ -3247,12 +3284,11 @@ function Library:CreateWindow(...)
                 Parent = BoxInner;
             });
 
-			Library:Create('UIListLayout', {
-				FillDirection = Enum.FillDirection.Vertical;
-				SortOrder = Enum.SortOrder.LayoutOrder;
-				Parent = Container;
-			});
-            
+            Library:Create('UIListLayout', {
+                FillDirection = Enum.FillDirection.Vertical;
+                SortOrder = Enum.SortOrder.LayoutOrder;
+                Parent = Container;
+            });
 
             function Groupbox:Resize()
                 local Size = 0;
@@ -3521,50 +3557,6 @@ function Library:CreateWindow(...)
         Fading = true;
         Toggled = (not Toggled);
         ModalElement.Modal = Toggled;
-
-        if Toggled then
-            -- A bit scuffed, but if we're going from not toggled -> toggled we want to show the frame immediately so that the fade is visible.
-            Outer.Visible = true;
-
-            task.spawn(function()
-                -- TODO: add cursor fade?
-                local State = InputService.MouseIconEnabled;
-
-                local Cursor = Drawing.new('Triangle');
-                Cursor.Thickness = 1;
-                Cursor.Filled = true;
-                Cursor.Visible = true;
-
-                local CursorOutline = Drawing.new('Triangle');
-                CursorOutline.Thickness = 1;
-                CursorOutline.Filled = false;
-                CursorOutline.Color = Color3.new(0, 0, 0);
-                CursorOutline.Visible = true;
-
-                while Toggled and ScreenGui.Parent do
-                    InputService.MouseIconEnabled = false;
-
-                    local mPos = InputService:GetMouseLocation();
-
-                    Cursor.Color = Library.AccentColor;
-
-                    Cursor.PointA = Vector2.new(mPos.X, mPos.Y);
-                    Cursor.PointB = Vector2.new(mPos.X + 16, mPos.Y + 6);
-                    Cursor.PointC = Vector2.new(mPos.X + 6, mPos.Y + 16);
-
-                    CursorOutline.PointA = Cursor.PointA;
-                    CursorOutline.PointB = Cursor.PointB;
-                    CursorOutline.PointC = Cursor.PointC;
-
-                    RenderStepped:Wait();
-                end;
-
-                InputService.MouseIconEnabled = State;
-
-                Cursor:Remove();
-                CursorOutline:Remove();
-            end);
-        end;
 
         for _, Desc in next, Outer:GetDescendants() do
             local Properties = {};
