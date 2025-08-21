@@ -3030,7 +3030,7 @@ function Library:CreateWindow(...)
 
     local WindowLabel = Library:CreateLabel({
         Position = UDim2.new(0.5, 0, 0, 0);
-        --AnchorPoint = Vector2.new(0.5,0.5);
+        AnchorPoint = Vector2.new(0.5,0.5);
         Size = UDim2.new(0, 0, 0, 100); -- 25
         Text = "nigga"; --Config.Title or '';
         TextXAlignment = Enum.TextXAlignment.Left;
