@@ -2483,26 +2483,35 @@ do
             RecalculateListSize(Y);
         end;
 
-       function Dropdown:SetValues(NewValues)
+     function Dropdown:SetValues(NewValues)
             if NewValues then
                 Dropdown.Values = NewValues
             end
         
-            -- Clean up Dropdown.Value for removed entries
+            local oldValue = Dropdown.Value
+            local changed = false
+        
             if Dropdown.Multi then
                 for key in pairs(Dropdown.Value) do
                     if not table.find(Dropdown.Values, key) then
                         Dropdown.Value[key] = nil
+                        changed = true
                     end
                 end
             else
                 if Dropdown.Value and not table.find(Dropdown.Values, Dropdown.Value) then
                     Dropdown.Value = nil
+                    changed = true
                 end
             end
         
             Dropdown:BuildDropdownList()
             Dropdown:Display()
+        
+            if changed then
+                Library:SafeCallback(Dropdown.Callback, Dropdown.Value)
+                Library:SafeCallback(Dropdown.Changed, Dropdown.Value)
+            end
         end
 
         function Dropdown:OpenDropdown()
