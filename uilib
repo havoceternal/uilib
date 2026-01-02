@@ -2484,34 +2484,36 @@ do
         end;
 
      function Dropdown:SetValues(NewValues)
-            if NewValues then
-                Dropdown.Values = NewValues
-            end
+        	if NewValues then
+        		Dropdown.Values = NewValues
+        	end
         
-            local oldValue = Dropdown.Value
-            local changed = false
+        	local oldValue = Dropdown.Value
+        	local changed = false
         
-            if Dropdown.Multi then
-                for key in pairs(Dropdown.Value) do
-                    if not table.find(Dropdown.Values, key) then
-                        Dropdown.Value[key] = nil
-                        changed = true
-                    end
-                end
-            else
-                if Dropdown.Value and not table.find(Dropdown.Values, Dropdown.Value) then
-                    Dropdown.Value = nil
-                    changed = true
-                end
-            end
+        	if Dropdown.SpecialType ~= 'Player' then
+        		if Dropdown.Multi then
+        			for key in pairs(Dropdown.Value) do
+        				if not table.find(Dropdown.Values, key) then
+        					Dropdown.Value[key] = nil
+        					changed = true
+        				end
+        			end
+        		else
+        			if Dropdown.Value and not table.find(Dropdown.Values, Dropdown.Value) then
+        				Dropdown.Value = nil
+        				changed = true
+        			end
+        		end
+        	end
         
-            Dropdown:BuildDropdownList()
-            Dropdown:Display()
+        	Dropdown:BuildDropdownList()
+        	Dropdown:Display()
         
-            if changed then
-                Library:SafeCallback(Dropdown.Callback, Dropdown.Value)
-                Library:SafeCallback(Dropdown.Changed, Dropdown.Value)
-            end
+        	if changed then
+        		Library:SafeCallback(Dropdown.Callback, Dropdown.Value)
+        		Library:SafeCallback(Dropdown.Changed, Dropdown.Value)
+        	end
         end
 
         function Dropdown:OpenDropdown()
@@ -3627,11 +3629,23 @@ end;
 local function OnPlayerChange()
     local PlayerList = GetPlayersString();
 
-    for _, Value in next, Options do
-        if Value.Type == 'Dropdown' and Value.SpecialType == 'Player' then
-            Value:SetValues(PlayerList);
-        end;
-    end;
+	for _, Value in next, Options do
+		if Value.Type == 'Dropdown' and Value.SpecialType == 'Player' then
+			if Value.Multi then
+				for selectedPlayer in pairs(Value.Value) do
+					if not table.find(PlayerList, selectedPlayer) then
+						Value.Value[selectedPlayer] = nil
+					end
+				end
+			else
+				if Value.Value and not table.find(PlayerList, Value.Value) then
+					Value.Value = nil
+				end
+			end
+
+			Value:SetValues(PlayerList);
+		end
+	end
 end;
 
 Players.PlayerAdded:Connect(OnPlayerChange);
