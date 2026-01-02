@@ -3630,20 +3630,29 @@ local function OnPlayerChange()
     local PlayerList = GetPlayersString();
 
 	for _, Value in next, Options do
-		if Value.Type == 'Dropdown' and Value.SpecialType == 'Player' then
-			if Value.Multi then
-				for selectedPlayer in pairs(Value.Value) do
-					if not table.find(PlayerList, selectedPlayer) then
-						Value.Value[selectedPlayer] = nil
-					end
-				end
-			else
-				if Value.Value and not table.find(PlayerList, Value.Value) then
-					Value.Value = nil
+	if Value.Type == 'Dropdown' and Value.SpecialType == 'Player' then
+		local changed = false
+
+		if Value.Multi then
+			for selectedPlayer in pairs(Value.Value) do
+				if not table.find(PlayerList, selectedPlayer) then
+					Value.Value[selectedPlayer] = nil
+					changed = true
 				end
 			end
+		else
+			if Value.Value and not table.find(PlayerList, Value.Value) then
+				Value.Value = nil
+				changed = true
+			end
+		end
 
-			Value:SetValues(PlayerList);
+		Value:SetValues(PlayerList);
+
+		if changed then
+			Library:SafeCallback(Value.Callback, Value.Value)
+			Library:SafeCallback(Value.Changed, Value.Value)
+			Library:AttemptSave()
 		end
 	end
 end;
