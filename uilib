@@ -748,7 +748,7 @@ do
 
                 local Button = Library:CreateLabel({
                     Active = false;
-                    Size = UDim2.new(1, 0, 0, 30);
+                    Size = UDim2.new(1, 0, 0, 15);
                     TextSize = 13;
                     Text = Str;
                     ZIndex = 16;
@@ -1877,7 +1877,7 @@ do
         });
 
         local ToggleRegion = Library:Create('Frame', {
-            BackgroundTransparency = 1;
+            BackgroundTransparency = 0;
             Size = UDim2.new(0, 170, 1, 0);
             ZIndex = 8;
             Parent = ToggleOuter;
