@@ -91,10 +91,10 @@ local ThemeManager = {} do
 
 		table.sort(ThemesArray, function(a, b) return self.BuiltInThemes[a][1] < self.BuiltInThemes[b][1] end)
 
-		groupbox:AddDivider()
+		--[[groupbox:AddDivider()
 		groupbox:AddRainbowAccentToggle('ThemeManager_RainbowAccent', { Text = 'Rainbow accent', Default = false })
 
-		groupbox:AddDivider()
+		groupbox:AddDivider()--]]
 		groupbox:AddDropdown('ThemeManager_ThemeList', { Text = 'Theme list', Values = ThemesArray, Default = 1 })
 
 		groupbox:AddButton('Set as default', function()
