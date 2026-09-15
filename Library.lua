@@ -2063,6 +2063,10 @@ do
         assert(Info.Max, 'AddSlider: Missing maximum value.');
         assert(Info.Rounding, 'AddSlider: Missing rounding value.');
 
+        if Info.UltraCompact then
+            Info.Compact = true;
+        end
+
         local Slider = {
             Value = Info.Default;
             Min = Info.Min;
@@ -2075,6 +2079,61 @@ do
 
         local Groupbox = self;
         local Container = Groupbox.Container;
+        local ParentContainer = Container;
+
+        -- UltraCompact places two sliders side-by-side (half width each),
+        -- exactly like the built-in "ratio x / ratio y" sliders. The first
+        -- UltraCompact slider opens a row and takes the left half; the very
+        -- next UltraCompact slider fills the right half and closes the row.
+        -- Non-UltraCompact calls in between clear any half-open row so it
+        -- can't silently swallow an unrelated slider later on.
+        local UltraCompactRow;
+
+        if Info.UltraCompact then
+            UltraCompactRow = Groupbox._UltraCompactRow;
+
+            if not UltraCompactRow then
+                local RowFrame = Library:Create('Frame', {
+                    BackgroundTransparency = 1;
+                    Size = UDim2.new(1, 0, 0, 13);
+                    ZIndex = 5;
+                    Parent = Container;
+                });
+
+                Library:Create('UIListLayout', {
+                    FillDirection = Enum.FillDirection.Horizontal;
+                    SortOrder = Enum.SortOrder.LayoutOrder;
+                    Padding = UDim.new(0, 4);
+                    Parent = RowFrame;
+                });
+
+                local LeftHalf = Library:Create('Frame', {
+                    BackgroundTransparency = 1;
+                    Size = UDim2.new(0.5, -2, 1, 0);
+                    ZIndex = 5;
+                    Parent = RowFrame;
+                });
+
+                local RightHalf = Library:Create('Frame', {
+                    BackgroundTransparency = 1;
+                    Size = UDim2.new(0.5, -2, 1, 0);
+                    ZIndex = 5;
+                    Parent = RowFrame;
+                });
+
+                UltraCompactRow = { Frame = RowFrame, Halves = { LeftHalf, RightHalf }, Used = 0 };
+                Groupbox._UltraCompactRow = UltraCompactRow;
+            end
+
+            UltraCompactRow.Used = UltraCompactRow.Used + 1;
+            ParentContainer = UltraCompactRow.Halves[UltraCompactRow.Used];
+
+            if UltraCompactRow.Used >= 2 then
+                Groupbox._UltraCompactRow = nil;
+            end
+        else
+            Groupbox._UltraCompactRow = nil;
+        end
 
         if not Info.Compact then
             Library:CreateLabel({
@@ -2095,12 +2154,33 @@ do
             BorderColor3 = Color3.new(0, 0, 0);
             Size = UDim2.new(1, -4, 0, 13);
             ZIndex = 5;
-            Parent = Container;
+            Parent = ParentContainer;
         });
 
         Library:AddToRegistry(SliderOuter, {
             BorderColor3 = 'Black';
         });
+
+        if Info.UltraCompact then
+            -- The half-width slot's real pixel width isn't known until Roblox
+            -- lays it out, so keep Slider.MaxSize (used for both the fill bar
+            -- and drag math) in sync with the actual rendered width instead
+            -- of relying on the fixed 232px constant full-width sliders use.
+            local function SyncMaxSize()
+                local Width = SliderOuter.AbsoluteSize.X;
+
+                if Width > 0 then
+                    Slider.MaxSize = Width;
+
+                    if Slider.Display then
+                        Slider:Display();
+                    end
+                end
+            end
+
+            Library:GiveSignal(SliderOuter:GetPropertyChangedSignal('AbsoluteSize'):Connect(SyncMaxSize));
+            task.defer(SyncMaxSize);
+        end
 
         local SliderInner = Library:Create('Frame', {
             BackgroundColor3 = Library.MainColor;
@@ -2244,7 +2324,11 @@ do
         end);
 
         Slider:Display();
-        Groupbox:AddBlank(Info.BlankSize or 6);
+
+        if not (Info.UltraCompact and UltraCompactRow and UltraCompactRow.Used < 2) then
+            Groupbox:AddBlank(Info.BlankSize or 6);
+        end
+
         Groupbox:Resize();
 
         Options[Idx] = Slider;
