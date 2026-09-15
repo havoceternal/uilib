@@ -36,6 +36,8 @@ local Library = {
     OutlineColor = Color3.fromRGB(50, 50, 50);
     RiskColor = Color3.fromRGB(255, 50, 50),
 
+    RainbowAccentEnabled = false;
+
     Black = Color3.new(0, 0, 0);
     Font = Enum.Font.Code,
 
@@ -63,6 +65,12 @@ table.insert(Library.Signals, RenderStepped:Connect(function(Delta)
 
         Library.CurrentRainbowHue = Hue;
         Library.CurrentRainbowColor = Color3.fromHSV(Hue, 0.8, 1);
+
+        if Library.RainbowAccentEnabled then
+            Library.AccentColor = Library.CurrentRainbowColor;
+            Library.AccentColorDark = Library:GetDarkerColor(Library.AccentColor);
+            Library:UpdateColorsUsingRegistry();
+        end
     end
 end))
 
@@ -2017,7 +2025,34 @@ do
         Toggles[Idx] = Toggle
     
         Library:UpdateDependencyBoxes()
-    
+
+        return Toggle
+    end
+
+    function Funcs:AddRainbowAccentToggle(Idx, Info)
+        Info = Info or {};
+        Info.Text = Info.Text or 'Rainbow Accent';
+        Info.Tooltip = Info.Tooltip or 'Cycles the accent color through a smooth rainbow while enabled.';
+
+        local Toggle = self:AddToggle(Idx, Info);
+
+        -- :OnChanged fires immediately with the current value (so Info.Default
+        -- is respected right away) and again every time the toggle changes,
+        -- exactly like ThemeManager wires up its own Options:OnChanged calls.
+        Toggle:OnChanged(function(Value)
+            Library.RainbowAccentEnabled = Value;
+
+            if not Value then
+                -- Restore whatever accent color is currently selected
+                -- (theme / color picker) once the rainbow is turned off.
+                local Restored = (Options.AccentColor and Options.AccentColor.Value) or Library.AccentColor;
+
+                Library.AccentColor = Restored;
+                Library.AccentColorDark = Library:GetDarkerColor(Restored);
+                Library:UpdateColorsUsingRegistry();
+            end
+        end);
+
         return Toggle;
     end
 
